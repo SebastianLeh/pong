@@ -10,6 +10,27 @@ const BALL_SIZE = 15;
 const PADDLE_SPEED = 6;
 const WINNING_SCORE = 7;
 
+let gamepad;
+let hasGamepad = false;
+const GAMEPAD_DEADZONE = 0.2; // Ignore small analog stick movements
+
+// Check for gamepad connection/disconnection
+window.addEventListener("gamepadconnected", (e) => {
+  console.log("Gamepad connected:", e.gamepad);
+  gamepad = e.gamepad;
+  hasGamepad = true;
+});
+
+window.addEventListener("gamepaddisconnected", (e) => {
+  console.log("Gamepad disconnected");
+  hasGamepad = false;
+});
+
+// Helper function to handle analog stick deadzone
+function applyDeadzone(value) {
+  return Math.abs(value) < GAMEPAD_DEADZONE ? 0 : value;
+}
+
 function setup() {
   createCanvas(800, 500);
   
@@ -102,6 +123,34 @@ function draw() {
   drawBackground();
   
   // Handle player input
+  // Update gamepad state
+  if (hasGamepad) {
+    // Get the latest gamepad state
+    const gamepads = navigator.getGamepads();
+    gamepad = gamepads[gamepad.index];
+    
+    // Left paddle (Left analog stick Y-axis or D-pad up/down)
+    const leftStickY = applyDeadzone(gamepad.axes[1]); // Y-axis of left stick
+    if (leftStickY !== 0) {
+      leftPaddle.move(leftStickY);
+    } else if (gamepad.buttons[12].pressed) { // D-pad up
+      leftPaddle.move(-1);
+    } else if (gamepad.buttons[13].pressed) { // D-pad down
+      leftPaddle.move(1);
+    }
+    
+    // Right paddle (Right analog stick Y-axis or face buttons)
+    const rightStickY = applyDeadzone(gamepad.axes[3]); // Y-axis of right stick
+    if (rightStickY !== 0) {
+      rightPaddle.move(rightStickY);
+    } else if (gamepad.buttons[3].pressed) { // Y button
+      rightPaddle.move(-1);
+    } else if (gamepad.buttons[0].pressed) { // A button
+      rightPaddle.move(1);
+    }
+  }
+  
+  // Keyboard controls (as fallback)
   // Left paddle (W/S keys)
   if (keyIsDown(87)) { // W key
     leftPaddle.move(-1);
@@ -175,16 +224,23 @@ function gameOver() {
 }
 
 function keyPressed() {
-  // Restart game if space is pressed after game over
-  if (key === ' ' && (leftScore >= WINNING_SCORE || rightScore >= WINNING_SCORE)) {
-    leftScore = 0;
-    rightScore = 0;
-    resetBall();
-    loop();
-  }
+  checkGameRestart();
   
   // Change background with 'B' key
   if (key === 'b' || key === 'B') {
     changeBackgroundStyle();
+  }
+}
+
+// Separate function to check for game restart to handle both keyboard and gamepad
+function checkGameRestart() {
+  if (leftScore >= WINNING_SCORE || rightScore >= WINNING_SCORE) {
+    // Check keyboard space key or gamepad start button
+    if (key === ' ' || (hasGamepad && gamepad.buttons[9].pressed)) { // button[9] is typically START
+      leftScore = 0;
+      rightScore = 0;
+      resetBall();
+      loop();
+    }
   }
 }
