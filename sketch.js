@@ -1,3 +1,9 @@
+// Import our modules
+import { GamepadManager } from './gamepad.js';
+import { initBackground, drawBackground, changeBackgroundStyle, ColorSchemes } from './backgrounds.js';
+import { initSimpleBackground, drawSimpleBackground } from './background-simple.js';
+import { BackgroundManager } from './background-manager.js';
+
 // Game variables
 let leftPaddle;
 let rightPaddle;
@@ -10,32 +16,24 @@ const BALL_SIZE = 15;
 const PADDLE_SPEED = 6;
 const WINNING_SCORE = 7;
 
-let gamepad;
-let hasGamepad = false;
-const GAMEPAD_DEADZONE = 0.2; // Ignore small analog stick movements
+// Module instances
+let gamepadManager;
+let backgroundManager;
 
-// Check for gamepad connection/disconnection
-window.addEventListener("gamepadconnected", (e) => {
-  console.log("Gamepad connected:", e.gamepad);
-  gamepad = e.gamepad;
-  hasGamepad = true;
-});
-
-window.addEventListener("gamepaddisconnected", (e) => {
-  console.log("Gamepad disconnected");
-  hasGamepad = false;
-});
-
-// Helper function to handle analog stick deadzone
-function applyDeadzone(value) {
-  return Math.abs(value) < GAMEPAD_DEADZONE ? 0 : value;
-}
+// Make p5.js functions available globally for modules
+window.setup = setup;
+window.draw = draw;
+window.keyPressed = keyPressed;
 
 function setup() {
-  createCanvas(800, 500);
+  createCanvas(1200, 800);
   
-  // Initialize background visualization
-  initBackground();
+  // Initialize our modules
+  gamepadManager = new GamepadManager();
+  backgroundManager = new BackgroundManager();
+  
+  // Initialize the backgrounds
+  backgroundManager.init();
   
   // Create paddles
   leftPaddle = {
@@ -118,39 +116,46 @@ function resetBall() {
 }
 
 function draw() {
-  // Draw animated background
+  // Draw background
   background(255);
-  drawBackground();
+  backgroundManager.draw();
   
-  // Handle player input
   // Update gamepad state
-  if (hasGamepad) {
-    // Get the latest gamepad state
-    const gamepads = navigator.getGamepads();
-    gamepad = gamepads[gamepad.index];
+  gamepadManager.update();
+  
+  // Handle gamepad input for paddles
+  if (gamepadManager.hasGamepad) {
+    // Left paddle - left stick, D-pad, or left shoulder/trigger
+    const leftMovement = gamepadManager.getMovementInput();
+    const leftTrigger = gamepadManager.getLeftTriggerMovement();
     
-    // Left paddle (Left analog stick Y-axis or D-pad up/down)
-    const leftStickY = applyDeadzone(gamepad.axes[1]); // Y-axis of left stick
-    if (leftStickY !== 0) {
-      leftPaddle.move(leftStickY);
-    } else if (gamepad.buttons[12].pressed) { // D-pad up
+    if (leftMovement.y !== 0) {
+      leftPaddle.move(leftMovement.y);
+    } else if (gamepadManager.isButtonPressed('LB')) {
       leftPaddle.move(-1);
-    } else if (gamepad.buttons[13].pressed) { // D-pad down
-      leftPaddle.move(1);
+    } else if (leftTrigger > 0) {
+      leftPaddle.move(leftTrigger);
     }
     
-    // Right paddle (Right analog stick Y-axis or face buttons)
-    const rightStickY = applyDeadzone(gamepad.axes[3]); // Y-axis of right stick
-    if (rightStickY !== 0) {
-      rightPaddle.move(rightStickY);
-    } else if (gamepad.buttons[3].pressed) { // Y button
+    // Right paddle - right stick, face buttons, or right shoulder/trigger
+    const rightStick = gamepadManager.getRightStick();
+    const rightTrigger = gamepadManager.getRightTriggerMovement();
+    
+    if (rightStick.y !== 0) {
+      rightPaddle.move(rightStick.y);
+    } else if (gamepadManager.isButtonPressed('Y') || gamepadManager.isButtonPressed('RB')) {
       rightPaddle.move(-1);
-    } else if (gamepad.buttons[0].pressed) { // A button
-      rightPaddle.move(1);
+    } else if (gamepadManager.isButtonPressed('A') || rightTrigger > 0) {
+      rightPaddle.move(rightTrigger > 0 ? rightTrigger : 1);
+    }
+    
+    // Check for restart with gamepad
+    if (gamepadManager.isButtonJustPressed('START') || gamepadManager.isButtonJustPressed('SELECT')) {
+      checkGameRestart();
     }
   }
   
-  // Keyboard controls (as fallback)
+  // Keyboard controls (fallback)
   // Left paddle (W/S keys)
   if (keyIsDown(87)) { // W key
     leftPaddle.move(-1);
@@ -226,17 +231,22 @@ function gameOver() {
 function keyPressed() {
   checkGameRestart();
   
-  // Change background with 'B' key
+  // Change background color scheme with 'C' key
+  if (key === 'c' || key === 'C') {
+    backgroundManager.changeColorScheme();
+  }
+  
+  // Change background animation type with 'B' key
   if (key === 'b' || key === 'B') {
-    changeBackgroundStyle();
+    backgroundManager.switchBackgroundType();
   }
 }
 
 // Separate function to check for game restart to handle both keyboard and gamepad
 function checkGameRestart() {
   if (leftScore >= WINNING_SCORE || rightScore >= WINNING_SCORE) {
-    // Check keyboard space key or gamepad start button
-    if (key === ' ' || (hasGamepad && gamepad.buttons[9].pressed)) { // button[9] is typically START
+    // Check keyboard space key
+    if (key === ' ') {
       leftScore = 0;
       rightScore = 0;
       resetBall();

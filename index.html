@@ -14,15 +14,21 @@
 
   <body>
     <div id="game-container">
-      <script src="background.js"></script>
-      <script src="sketch.js"></script>
+      <!-- Load as ES6 modules -->
+      <script type="module" src="gamepad.js"></script>
+      <script type="module" src="backgrounds.js"></script>
+      <script type="module" src="background-simple.js"></script>
+      <script type="module" src="background-manager.js"></script>
+      <script type="module" src="sketch.js"></script>
     </div>
     <div id="instructions">
       <p><strong>Controls:</strong><br>
-      Left player: W (up), S (down)<br>
-      Right player: ↑ (up), ↓ (down)<br>
-      Press SPACE to restart after game ends<br>
-      Press B to change background</p>
+      Left player: W (up), S (down) OR Left analog stick/D-pad<br>
+      Right player: ↑ (up), ↓ (down) OR Right analog stick/Y/A buttons<br>
+      Press SPACE or START button to restart after game ends<br>
+      Press <strong>C</strong> to change background colors<br>
+      Press <strong>B</strong> to change background animation type<br>
+      <em>Connect a USB gamepad for enhanced control!</em></p>
     </div>
   </body>
 </html>
