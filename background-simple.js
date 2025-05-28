@@ -63,18 +63,23 @@ class SimpleBackgroundElement {
     });
     
     // Add subtle shadow
-    drawingContext.shadowColor = 'rgba(0,0,0,0.1)';
-    drawingContext.shadowBlur = 5;
-    drawingContext.shadowOffsetX = 2;
-    drawingContext.shadowOffsetY = 2;
+    const ctx = window.drawingContext || (typeof drawingContext !== 'undefined' ? drawingContext : null);
+    if (ctx) {
+      ctx.shadowColor = 'rgba(0,0,0,0.1)';
+      ctx.shadowBlur = 5;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+    }
     
     ellipse(0, 0, this.w, this.h);
     
     // Reset shadow
-    drawingContext.shadowColor = 'rgba(0,0,0,0)';
-    drawingContext.shadowBlur = 0;
-    drawingContext.shadowOffsetX = 0;
-    drawingContext.shadowOffsetY = 0;
+    if (ctx) {
+      ctx.shadowColor = 'rgba(0,0,0,0)';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
     
     pop();
   }

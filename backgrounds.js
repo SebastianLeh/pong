@@ -1,5 +1,5 @@
-// Background visualization based on DJ Spin
-// Simplified version for use as Pong background
+// Background visualization for Pong
+// Simplified version that doesn't depend on dj_spin
 
 // Global variables for background
 let backgroundPalette;
@@ -50,6 +50,12 @@ function setBackgroundGradient(options = {}) {
     repetitions = 1
   } = options;
 
+  // Get drawing context safely
+  if (typeof drawingContext === 'undefined') {
+    console.warn('drawingContext not available, skipping gradient');
+    return;
+  }
+
   let gradientColor;
   const ctx = drawingContext;
 
@@ -91,6 +97,8 @@ class BackgroundElement {
     this.scaleY = props.scaleY || 1.0;
     this.angle = props.angle || 0;
     this.size = props.size || 100;
+    this.w = this.size;
+    this.h = this.size;
     
     // Dynamic movement properties
     this.localAngle = 0;
@@ -132,20 +140,8 @@ class BackgroundElement {
       x1: 0, y1: dynamicH * 2,
     });
     
-    // Add subtle shadow with dynamic intensity
-    const shadowIntensity = 0.1 + sin(frameCount * this.pulseSpeed * 2) * 0.05;
-    drawingContext.shadowColor = `rgba(0,0,0,${shadowIntensity})`;
-    drawingContext.shadowBlur = 5 + sin(frameCount * this.pulseSpeed) * 2;
-    drawingContext.shadowOffsetX = 2 + cos(frameCount * this.pulseSpeed) * 1;
-    drawingContext.shadowOffsetY = 2 + sin(frameCount * this.pulseSpeed) * 1;
-    
-    ellipse(0, 0, this.w, this.h);
-    
-    // Reset shadow
-    drawingContext.shadowColor = 'rgba(0,0,0,0)';
-    drawingContext.shadowBlur = 0;
-    drawingContext.shadowOffsetX = 0;
-    drawingContext.shadowOffsetY = 0;
+    // Draw the shape
+    ellipse(0, 0, this.w, dynamicH);
     
     pop();
   }
